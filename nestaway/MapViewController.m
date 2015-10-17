@@ -9,6 +9,7 @@
 #import "MapViewController.h"
 #define GETPROPERTYLIST @"http://a88a4240.ngrok.io/"
 #define PADDING 70.0f
+#define RADIUS 4000
 
 #import "MapMarkerInfoView.h"
 
@@ -25,14 +26,18 @@
 @implementation MapViewController{
     GMSMapView *mapView;
     GMSCoordinateBounds *bounds;
+    NSMutableArray *allLocationArray;
+    NSMutableArray *filteredLocationArray;
+
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     
     bounds = [[GMSCoordinateBounds alloc] init];
+    allLocationArray = [[NSMutableArray alloc] init];
+    filteredLocationArray = [[NSMutableArray alloc] init];
 
-    
     GMSCameraPosition *camera = [GMSCameraPosition cameraWithLatitude:12.9667 longitude:77.5667 zoom:12];
     mapView = [GMSMapView mapWithFrame:CGRectZero camera:camera];
     
@@ -59,8 +64,24 @@
 
 -(void) longPressed:(UILongPressGestureRecognizer*) gestureRecognizer{
     if (gestureRecognizer.state == UIGestureRecognizerStateBegan){
-        CGPoint longPressPoint = [gestureRecognizer locationInView:self.view];
-//        CLLocationCoordinate2D locationCoordinate = [self.view convertPoint:longPressPoint toCoordinateSpace:mapView];
+        CGPoint longPressPoint = [gestureRecognizer locationInView:mapView];
+        CLLocationCoordinate2D coordinate = [mapView.projection coordinateForPoint: longPressPoint];
+        NSLog(@"%f : %f",coordinate.latitude, coordinate.longitude);
+        
+        [filteredLocationArray removeAllObjects];
+        for (int i = 0; i < [allLocationArray count]; i++) {
+            GMSMarker *marker = allLocationArray[i];
+            CLLocation *location =[[CLLocation alloc] initWithLatitude:marker.position.latitude longitude:marker.position.longitude];
+            CLLocation *loc = [[CLLocation alloc] initWithLatitude:coordinate.latitude longitude:coordinate.longitude];
+            CLLocationDistance distanceMeter = [location distanceFromLocation:loc];
+            NSLog(@"%f",distanceMeter);
+
+            if(distanceMeter <= RADIUS){
+                NSLog(@"%f",distanceMeter);
+                [filteredLocationArray addObject:marker];
+            }
+        }
+        [self mapMarkersFromArray:filteredLocationArray];
     }
 }
 
@@ -113,6 +134,7 @@
         for (NSDictionary *house in housesResults) {
             [self addMarkerOnTheMap:house];
         }
+        [self mapMarkersFromArray:allLocationArray];
         [self adjustBoundsForMaxZoomLevel: bounds];
         self.currentBounds = bounds;
     } else{
@@ -132,10 +154,19 @@
     GMSMarker *marker = [GMSMarker markerWithPosition:position];
     marker.title = [house objectForKey:@"title"];
     marker.appearAnimation = YES;
-    marker.map = mapView;
     marker.icon = [UIImage imageNamed:@"marker"];
     [marker setUserData: house];
-    bounds = [bounds includingCoordinate: marker.position];
+    
+    [allLocationArray addObject:marker];
+}
+
+-(void) mapMarkersFromArray:(NSArray*)array{
+    [mapView clear];
+    for (int i =0 ; i < [array count]; i++) {
+        GMSMarker *marker = array[i];
+        marker.map = mapView;
+        bounds = [bounds includingCoordinate: marker.position];
+    }
 }
 
 -(UIView *) mapView: (GMSMapView *)mapView markerInfoWindow: (GMSMarker *)googleMarker {
