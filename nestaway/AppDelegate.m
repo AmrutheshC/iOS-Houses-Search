@@ -25,7 +25,6 @@
 }
 
 -(void) showLaunchScreen{
-    NSLog(@"Launching..");
     UIViewController *mapViewController = [[MapViewController alloc] init];
     
     UINavigationController *navigationController = ((UINavigationController *)self.window.rootViewController);

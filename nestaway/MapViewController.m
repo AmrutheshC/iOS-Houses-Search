@@ -48,8 +48,20 @@
     [mapView setMinZoom: 0.0 maxZoom: 18.0];
     self.view = mapView;
     
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self
+                                                                   action:@selector(longPressed:)];
+    longPress.delegate = self;
+    [self.view addGestureRecognizer:longPress];
+    
     [self getPropertyListingData];
     // Do any additional setup after loading the view from its nib.
+}
+
+-(void) longPressed:(UILongPressGestureRecognizer*) gestureRecognizer{
+    if (gestureRecognizer.state == UIGestureRecognizerStateBegan){
+        CGPoint longPressPoint = [gestureRecognizer locationInView:self.view];
+//        CLLocationCoordinate2D locationCoordinate = [self.view convertPoint:longPressPoint toCoordinateSpace:mapView];
+    }
 }
 
 -(void) viewDidLayoutSubviews{
